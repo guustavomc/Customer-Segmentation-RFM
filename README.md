@@ -36,7 +36,7 @@ outputs/                         # generated when the script runs (see below)
 - Dependencies:
 
 ```bash
-pip install pandas numpy scikit-learn scipy seaborn matplotlib plotly openpyxl ucimlrepo
+pip install -r requirements.txt
 ```
 
 ## How to run

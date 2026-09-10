@@ -1,0 +1,9 @@
+pandas 
+numpy 
+scikit-learn 
+scipy 
+seaborn 
+matplotlib 
+plotly 
+openpyxl 
+ucimlrepo
