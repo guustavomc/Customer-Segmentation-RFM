@@ -34,6 +34,7 @@ from sklearn.metrics import (
     silhouette_score,
     davies_bouldin_score,
     calinski_harabasz_score,
+    adjusted_rand_score,
 )
 from sklearn.neighbors import NearestNeighbors
 from sklearn.preprocessing import RobustScaler
@@ -165,11 +166,41 @@ def rodar_kmeans(X_scaled: np.ndarray, k_range=range(2, 11)):
     k_otimo = list(k_range)[int(np.argmax(silhouettes))]
     print(f"[K-Means] k sugerido pelo silhouette: {k_otimo} (ajuste manualmente se o Elbow discordar)")
 
+    analisar_estabilidade_kmeans(X_scaled, k_otimo)
+
     t0 = time.time()
     modelo = KMeans(n_clusters=k_otimo, random_state=RANDOM_STATE, n_init=10)
     labels = modelo.fit_predict(X_scaled)
     tempo = time.time() - t0
+    print(f"[K-Means] convergiu em {modelo.n_iter_} iterações (limite: {modelo.max_iter})")
     return labels, k_otimo, tempo
+
+
+def analisar_estabilidade_kmeans(X_scaled: np.ndarray, k_otimo: int, n_execucoes: int = 10) -> float:
+    """Roda o K-Means com várias seeds e mede o quanto os agrupamentos concordam entre si
+    (Adjusted Rand Index) — evidência de estabilidade/convergência exigida no Item 1."""
+    labels_execucoes = []
+    n_iters = []
+    for seed in range(n_execucoes):
+        km = KMeans(n_clusters=k_otimo, random_state=seed, n_init=10)
+        labels_execucoes.append(km.fit_predict(X_scaled))
+        n_iters.append(km.n_iter_)
+
+    aris = [
+        adjusted_rand_score(labels_execucoes[i], labels_execucoes[j])
+        for i in range(n_execucoes)
+        for j in range(i + 1, n_execucoes)
+    ]
+    ari_medio = float(np.mean(aris))
+    print(
+        f"[K-Means] Estabilidade: ARI médio entre {n_execucoes} execuções com seeds distintas "
+        f"= {ari_medio:.3f} (1.0 = clusters idênticos entre execuções)"
+    )
+    print(
+        f"[K-Means] Convergência: {np.mean(n_iters):.1f} iterações em média "
+        f"(máx={max(n_iters)} de um limite de {km.max_iter})"
+    )
+    return ari_medio
 
 
 def rodar_hierarchical(X_scaled: np.ndarray, k_otimo: int):
@@ -199,6 +230,21 @@ def rodar_hierarchical(X_scaled: np.ndarray, k_otimo: int):
     return labels, melhor, tempo
 
 
+def _encontrar_cotovelo(curva: np.ndarray) -> int:
+    """Localiza o índice do 'joelho' de uma curva monotonicamente crescente (kneedle):
+    o ponto mais distante da reta que liga o primeiro ao último ponto. Mais robusto que
+    pegar o maior salto absoluto, que tende a cair perto do fim da curva por causa de
+    outliers isolados."""
+    n = len(curva)
+    x_norm = np.arange(n) / (n - 1)
+    y_min, y_max = curva.min(), curva.max()
+    y_norm = (curva - y_min) / (y_max - y_min + 1e-12)
+
+    reta = y_norm[0] + (y_norm[-1] - y_norm[0]) * x_norm
+    distancias = np.abs(y_norm - reta)
+    return int(np.argmax(distancias))
+
+
 def rodar_dbscan(X_scaled: np.ndarray, eps: float | None = None):
     min_samples = X_scaled.shape[1] * 2
     nn = NearestNeighbors(n_neighbors=min_samples).fit(X_scaled)
@@ -213,10 +259,9 @@ def rodar_dbscan(X_scaled: np.ndarray, eps: float | None = None):
     fig.savefig(FIG_DIR / "dbscan_k_distance.png", dpi=150)
     plt.close(fig)
 
-    # heurística simples de cotovelo caso eps não seja informado manualmente
+    # heurística de cotovelo (kneedle) caso eps não seja informado manualmente
     if eps is None:
-        deltas = np.diff(k_distances)
-        eps = float(k_distances[max(int(np.argmax(deltas)), 1)])
+        eps = float(k_distances[_encontrar_cotovelo(k_distances)])
         print(f"[DBSCAN] eps estimado automaticamente pelo cotovelo: {eps:.3f} "
               f"(revise o gráfico dbscan_k_distance.png e ajuste com --eps se necessário)")
 
@@ -262,6 +307,13 @@ def visualizar_pca(rfm_model: pd.DataFrame, X_scaled: np.ndarray) -> pd.DataFram
     fig = px.scatter(rfm_model, x="PC1", y="PC2", color=rfm_model["Cluster"].astype(str),
                       title="Clusters de Clientes — Projeção PCA 2D", opacity=0.7,
                       labels={"color": "Cluster"})
+    centroides2 = rfm_model.groupby("Cluster")[["PC1", "PC2"]].mean()
+    fig.add_trace(go.Scatter(
+        x=centroides2["PC1"], y=centroides2["PC2"], mode="markers+text",
+        marker=dict(symbol="x", size=16, color="black", line=dict(width=2)),
+        text=[f"C{c}" for c in centroides2.index], textposition="top center",
+        name="Centroides",
+    ))
     fig.write_html(FIG_DIR / "pca_2d.html")
 
     pca3 = PCA(n_components=3, random_state=RANDOM_STATE)
@@ -272,6 +324,13 @@ def visualizar_pca(rfm_model: pd.DataFrame, X_scaled: np.ndarray) -> pd.DataFram
     fig3 = px.scatter_3d(rfm_model, x="PC1", y="PC2", z="PC3", color=rfm_model["Cluster"].astype(str),
                           title="Clusters de Clientes — Projeção PCA 3D", opacity=0.7,
                           labels={"color": "Cluster"})
+    centroides3 = rfm_model.groupby("Cluster")[["PC1", "PC2", "PC3"]].mean()
+    fig3.add_trace(go.Scatter3d(
+        x=centroides3["PC1"], y=centroides3["PC2"], z=centroides3["PC3"], mode="markers+text",
+        marker=dict(symbol="x", size=6, color="black", line=dict(width=2)),
+        text=[f"C{c}" for c in centroides3.index], textposition="top center",
+        name="Centroides",
+    ))
     fig3.write_html(FIG_DIR / "pca_3d.html")
     return rfm_model
 
@@ -339,10 +398,14 @@ def nomear_cluster(row: pd.Series, medianas: pd.Series) -> str:
 
 def montar_perfil_clusters(rfm_model: pd.DataFrame) -> pd.DataFrame:
     cluster_means = rfm_model.groupby("Cluster")[FEATURES].mean()
-    medianas = rfm_model[FEATURES].median()
+    # medianas de referência ignoram ruído do DBSCAN (-1) para não distorcer os cortes
+    medianas = rfm_model.loc[rfm_model["Cluster"] != -1, FEATURES].median()
 
     perfil = cluster_means.copy()
-    perfil["Nome_Sugerido"] = perfil.apply(lambda row: nomear_cluster(row, medianas), axis=1)
+    perfil["Nome_Sugerido"] = [
+        "Ruído / Outliers (DBSCAN)" if cluster == -1 else nomear_cluster(perfil.loc[cluster], medianas)
+        for cluster in perfil.index
+    ]
     perfil["N_Clientes"] = rfm_model["Cluster"].value_counts().sort_index()
     perfil["Revenue_Total"] = rfm_model.groupby("Cluster")["Monetary"].sum()
     perfil["Revenue_%"] = (perfil["Revenue_Total"] / perfil["Revenue_Total"].sum() * 100).round(1)
@@ -397,6 +460,10 @@ def main():
                      "dbscan": "Cluster_DBSCAN"}[args.algoritmo_final]
     rfm_model["Cluster"] = rfm_model[coluna_final]
     print(f"\nAlgoritmo final escolhido: {coluna_final}")
+    if -1 in rfm_model["Cluster"].values:
+        n_ruido = int((rfm_model["Cluster"] == -1).sum())
+        print(f"Aviso: {n_ruido} clientes marcados como ruído (-1) pelo DBSCAN — "
+              f"tratados como 'Ruído / Outliers' nas visualizações e no perfil de clusters.")
 
     print("\n=== 5. Gerando visualizações ===")
     rfm_model = visualizar_pca(rfm_model, X_scaled)
