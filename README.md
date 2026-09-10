@@ -1,6 +1,6 @@
 # Customer Segmentation RFM
 
-> Developed for the Unsupervised Learning course — Specialization in Applied Artificial Intelligence, UNISINOS.
+> Developed for the Unsupervised Learning course (Aprendizado de Máquina Não Supervisionado) — Specialization in Applied Artificial Intelligence, UNISINOS.
 
 Customer segmentation with unsupervised machine learning, using **RFM** analysis (Recency, Frequency, Monetary) on the [UCI Online Retail Dataset](https://archive.ics.uci.edu/dataset/352/online+retail). The pipeline compares three clustering algorithms (K-Means, Hierarchical and DBSCAN), validates the clusters with quantitative metrics, and produces the visualizations and segment naming required by the assignment (see [arquivos-base/ATIVIDADE.pdf](arquivos-base/ATIVIDADE.pdf)).
 
