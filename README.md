@@ -8,14 +8,14 @@ Customer segmentation with unsupervised machine learning, using **RFM** analysis
 
 1. **Loads the data** - local file (`--data`), via the `ucimlrepo` package, or a direct download of the official `.xlsx` (in that order of attempt).
 2. **Cleans the data** - drops rows without `CustomerID`, cancellations (`InvoiceNo` starting with "C"), non-positive quantities/prices, and duplicates.
-3. **Computes RFM** per customer (Recency in days, Frequency = number of unique orders, Monetary = total amount spent), removing extreme Monetary outliers (1%-99% percentiles) before scaling with `RobustScaler`.
+3. **Computes RFM** per customer (Recency in days, Frequency = number of unique orders, Monetary = total amount spent), removing extreme Monetary outliers (1%-99% percentiles), then applies `log1p` (RFM is heavily right-skewed) before scaling with `RobustScaler`.
 4. **Runs and compares the algorithms**:
-   - **K-Means** - Elbow Method + Silhouette Score to pick `k`, plus a stability analysis (Adjusted Rand Index across runs with different seeds) and a convergence check (number of iterations).
+   - **K-Means** - computes both the Elbow Method (inertia) and Silhouette Score across k=2..10. `k` is chosen from the **Elbow's knee** (kneedle detection) rather than the Silhouette maximum alone, because on RFM data Silhouette alone tends to favor a shallow k=2 split ("high value vs. everyone else") that hides business-relevant segments; the script logs both values and flags when they disagree. Also runs a stability analysis (Adjusted Rand Index across runs with different seeds) and a convergence check (number of iterations).
    - **Hierarchical (Agglomerative)** - dendrogram (sample of up to 500 customers) and comparison across `ward`/`complete`/`average` linkages, picking the one with the highest silhouette.
    - **DBSCAN** - k-distance graph with automatic `eps` estimation via knee detection (kneedle), overridable with `--eps`.
    - Validation metrics (Silhouette, Davies-Bouldin, Calinski-Harabasz, runtime) are saved to `outputs/comparacao_algoritmos.csv`.
 5. **Generates the Item 2 visualizations**: PCA 2D/3D scatter plots with marked centroids, a radar chart of cluster profiles, a feature heatmap, and customer/value distribution per segment (bar chart, boxplot, pie chart).
-6. **Names the segments** using the classic RFM framework (Champions, Loyal Customers, New Customers, At Risk, Lost). Points DBSCAN flags as noise (when DBSCAN is chosen as the final algorithm) are labeled "Ruido / Outliers" instead of being assigned a segment name.
+6. **Names the segments** using the classic RFM framework (Champions, Loyal Customers, New Customers, At Risk, Lost), ranking each cluster's Recency/Frequency/Monetary against the other clusters (not against individual customers) so names stay distinct regardless of how many clusters `k` turns out to be. Points DBSCAN flags as noise (when DBSCAN is chosen as the final algorithm) are labeled "Ruido / Outliers" instead of being assigned a segment name.
 
 ## Project structure
 

@@ -133,10 +133,28 @@ def preparar_features(rfm: pd.DataFrame) -> tuple[pd.DataFrame, np.ndarray, Robu
     q_low, q_high = rfm["Monetary"].quantile([0.01, 0.99])
     rfm_model = rfm[(rfm["Monetary"] >= q_low) & (rfm["Monetary"] <= q_high)].copy()
 
+    # Recency/Frequency/Monetary são fortemente assimétricos (poucos clientes concentram
+    # a maior parte de compras/receita); sem log1p, o silhouette maximiza em k=2 (só separa
+    # a cauda longa do resto) e mascara segmentos de negócio mais ricos (Loyal/New/Lost).
+    X_log = np.log1p(rfm_model[FEATURES].values)
     scaler = RobustScaler()
-    X_scaled = scaler.fit_transform(rfm_model[FEATURES])
+    X_scaled = scaler.fit_transform(X_log)
     print(f"Clientes na modelagem: {len(rfm_model):,} (de {len(rfm):,} originais)")
     return rfm_model, X_scaled, scaler
+
+
+def _encontrar_cotovelo(curva: np.ndarray) -> int:
+    """Localiza o índice do 'joelho' de uma curva monotonicamente decrescente/crescente
+    (kneedle): o ponto mais distante da reta que liga o primeiro ao último ponto. Mais
+    robusto que o maior salto absoluto, que tende a cair perto das pontas da curva."""
+    n = len(curva)
+    x_norm = np.arange(n) / (n - 1)
+    y_min, y_max = curva.min(), curva.max()
+    y_norm = (curva - y_min) / (y_max - y_min + 1e-12)
+
+    reta = y_norm[0] + (y_norm[-1] - y_norm[0]) * x_norm
+    distancias = np.abs(y_norm - reta)
+    return int(np.argmax(distancias))
 
 
 # ---------------------------------------------------------------------------
@@ -163,8 +181,19 @@ def rodar_kmeans(X_scaled: np.ndarray, k_range=range(2, 11)):
     fig.savefig(FIG_DIR / "kmeans_elbow_silhouette.png", dpi=150)
     plt.close(fig)
 
-    k_otimo = list(k_range)[int(np.argmax(silhouettes))]
-    print(f"[K-Means] k sugerido pelo silhouette: {k_otimo} (ajuste manualmente se o Elbow discordar)")
+    k_range_list = list(k_range)
+    k_cotovelo = k_range_list[_encontrar_cotovelo(np.array(inertias))]
+    k_silhouette = k_range_list[int(np.argmax(silhouettes))]
+    print(f"[K-Means] k pelo cotovelo da inércia (Elbow): {k_cotovelo} | "
+          f"k pelo silhouette máximo: {k_silhouette}")
+
+    # O Elbow Method é usado como critério principal: o silhouette isolado tende a favorecer
+    # k pequeno em RFM (agrupa só "cauda longa vs. resto"), perdendo granularidade de negócio.
+    k_otimo = k_cotovelo
+    if k_otimo != k_silhouette:
+        print(f"[K-Means] Elbow e Silhouette discordam — adotando k={k_otimo} (Elbow) "
+              f"por preservar mais segmentos de negócio; silhouette em k={k_otimo} = "
+              f"{silhouettes[k_range_list.index(k_otimo)]:.4f}")
 
     analisar_estabilidade_kmeans(X_scaled, k_otimo)
 
@@ -228,21 +257,6 @@ def rodar_hierarchical(X_scaled: np.ndarray, k_otimo: int):
     tempo = time.time() - t0
     print(f"[Hierarchical] melhor linkage: {melhor}")
     return labels, melhor, tempo
-
-
-def _encontrar_cotovelo(curva: np.ndarray) -> int:
-    """Localiza o índice do 'joelho' de uma curva monotonicamente crescente (kneedle):
-    o ponto mais distante da reta que liga o primeiro ao último ponto. Mais robusto que
-    pegar o maior salto absoluto, que tende a cair perto do fim da curva por causa de
-    outliers isolados."""
-    n = len(curva)
-    x_norm = np.arange(n) / (n - 1)
-    y_min, y_max = curva.min(), curva.max()
-    y_norm = (curva - y_min) / (y_max - y_min + 1e-12)
-
-    reta = y_norm[0] + (y_norm[-1] - y_norm[0]) * x_norm
-    distancias = np.abs(y_norm - reta)
-    return int(np.argmax(distancias))
 
 
 def rodar_dbscan(X_scaled: np.ndarray, eps: float | None = None):
@@ -380,30 +394,43 @@ def distribuicao_por_segmento(rfm_model: pd.DataFrame):
 # ---------------------------------------------------------------------------
 # 6. Nomeação dos clusters (framework RFM)
 # ---------------------------------------------------------------------------
-def nomear_cluster(row: pd.Series, medianas: pd.Series) -> str:
-    r_baixo = row["Recency"] <= medianas["Recency"]
-    f_alto = row["Frequency"] >= medianas["Frequency"]
-    m_alto = row["Monetary"] >= medianas["Monetary"]
+def nomear_clusters(cluster_means: pd.DataFrame) -> pd.Series:
+    """Nomeia cada cluster pelo seu posicionamento relativo (rank) frente aos demais
+    clusters nas três dimensões RFM — em vez de comparar a média de cada cluster contra
+    a mediana dos clientes individuais, o que colide (dois clusters recebendo o mesmo
+    nome) sempre que k > 2, já que médias de cluster tendem a ficar todas de um mesmo
+    lado da mediana geral de clientes."""
+    k = len(cluster_means)
+    rank_r = cluster_means["Recency"].rank(method="first")                     # 1 = mais recente
+    rank_f = cluster_means["Frequency"].rank(method="first", ascending=False)  # 1 = mais frequente
+    rank_m = cluster_means["Monetary"].rank(method="first", ascending=False)   # 1 = maior valor
 
-    if r_baixo and f_alto and m_alto:
-        return "Champions"
-    if r_baixo and f_alto:
-        return "Loyal Customers"
-    if r_baixo and not f_alto:
-        return "New Customers"
-    if not r_baixo and (f_alto or m_alto):
-        return "At Risk"
-    return "Lost"
+    recente = max(1, round(k * 0.6))  # ~60% dos clusters mais recentes
+    valioso = max(1, round(k * 0.4))  # ~40% dos clusters com maior F/M
+
+    nomes = {}
+    for cluster in cluster_means.index:
+        r, f, m = rank_r[cluster], rank_f[cluster], rank_m[cluster]
+        if r <= recente:
+            if f <= valioso and m <= valioso:
+                nomes[cluster] = "Champions"
+            elif f <= valioso or m <= valioso:
+                nomes[cluster] = "Loyal Customers"
+            else:
+                nomes[cluster] = "New Customers"
+        else:
+            nomes[cluster] = "At Risk" if (f <= recente or m <= recente) else "Lost"
+    return pd.Series(nomes)
 
 
 def montar_perfil_clusters(rfm_model: pd.DataFrame) -> pd.DataFrame:
     cluster_means = rfm_model.groupby("Cluster")[FEATURES].mean()
-    # medianas de referência ignoram ruído do DBSCAN (-1) para não distorcer os cortes
-    medianas = rfm_model.loc[rfm_model["Cluster"] != -1, FEATURES].median()
+    cluster_means_validos = cluster_means.drop(index=-1, errors="ignore")
+    nomes = nomear_clusters(cluster_means_validos)
 
     perfil = cluster_means.copy()
     perfil["Nome_Sugerido"] = [
-        "Ruído / Outliers (DBSCAN)" if cluster == -1 else nomear_cluster(perfil.loc[cluster], medianas)
+        "Ruído / Outliers (DBSCAN)" if cluster == -1 else nomes[cluster]
         for cluster in perfil.index
     ]
     perfil["N_Clientes"] = rfm_model["Cluster"].value_counts().sort_index()

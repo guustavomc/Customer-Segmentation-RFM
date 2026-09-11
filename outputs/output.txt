@@ -8,105 +8,38 @@ Linhas após limpeza: 392,692 | Clientes únicos: 4,338
 Clientes na modelagem: 4,251 (de 4,338 originais)
 
 === 4. Rodando algoritmos de clustering ===
-[K-Means] k sugerido pelo silhouette: 2 (ajuste manualmente se o Elbow discordar)
-[K-Means] Estabilidade: ARI médio entre 10 execuções com seeds distintas = 1.000 (1.0 = clusters idênticos entre execuções)
-[K-Means] Convergência: 14.2 iterações em média (máx=18 de um limite de 300)
-[K-Means] convergiu em 18 iterações (limite: 300)
-[Hierarchical] linkage=ward       silhouette=0.7558
-[Hierarchical] linkage=complete   silhouette=0.9015
-[Hierarchical] linkage=average    silhouette=0.9015
-[Hierarchical] melhor linkage: complete
-[DBSCAN] eps estimado automaticamente pelo cotovelo: 0.579 (revise o gráfico dbscan_k_distance.png e ajuste com --eps se necessário)
-[DBSCAN] 2 clusters | 108 pontos de ruído (2.5%)
+[K-Means] k pelo cotovelo da inércia (Elbow): 5 | k pelo silhouette máximo: 2
+[K-Means] Elbow e Silhouette discordam — adotando k=5 (Elbow) por preservar mais segmentos de negócio; silhouette em k=5 = 0.3173
+[K-Means] Estabilidade: ARI médio entre 10 execuções com seeds distintas = 0.966 (1.0 = clusters idênticos entre execuções)
+[K-Means] Convergência: 17.0 iterações em média (máx=29 de um limite de 300)
+[K-Means] convergiu em 21 iterações (limite: 300)
+[Hierarchical] linkage=ward       silhouette=0.2695
+[Hierarchical] linkage=complete   silhouette=0.2534
+[Hierarchical] linkage=average    silhouette=0.1524
+[Hierarchical] melhor linkage: ward
+[DBSCAN] eps estimado automaticamente pelo cotovelo: 0.231 (revise o gráfico dbscan_k_distance.png e ajuste com --eps se necessário)
+[DBSCAN] 3 clusters | 135 pontos de ruído (3.2%)
 
 --- Comparação dos algoritmos ---
    algoritmo  n_clusters  silhouette  davies_bouldin  calinski_harabasz  tempo_execucao_s
-     K-Means           2    0.707036        0.694550        4128.759626          0.018075
-Hierarchical           2    0.901517        0.108088         230.367823          0.240889
-      DBSCAN           2    0.717387        0.278346         315.526340          0.092902
+     K-Means           5    0.317278        1.008552        3231.285734          0.025778
+Hierarchical           5    0.269548        1.086639        2675.950037          0.289263
+      DBSCAN           3    0.168674        1.732938        2013.564808          0.030250
 
 Algoritmo final escolhido: Cluster_KMeans
 
 === 5. Gerando visualizações ===
-[PCA 2D] variância explicada: 90.5%
+[PCA 2D] variância explicada: 94.1%
 [PCA 3D] variância explicada: 100.0%
 
 === 6. Nomeando clusters ===
-           Recency  Frequency     Monetary Nome_Sugerido  N_Clientes  Revenue_Total  Revenue_%
-Cluster                                                                                       
-0        98.656122   2.910714   938.594491       At Risk        3920    3679290.404       61.0
-1        20.033233  15.616314  7120.888882     Champions         331    2357014.220       39.0
-
-Concluído. Resultados em: D:\Customer-Segmentation-RFM\outputs
-Figuras (PNG estáticos + HTML intpip install -r requirements.txtntation-RFM\outputs\figures
->> D:\Customer-Segmentation-RFM> 
-Requirement already satisfied: pandas in c:\users\gusta\appdata\local\programs\python\python312\lib\site-packages (from -r requirements.txt (line 1)) (2.2.3)
-Requirement already satisfied: numpy in c:\users\gusta\appdata\local\programs\python\python312\lib\site-packages (from -r requirements.txt (line 2)) (2.1.3)
-Requirement already satisfied: scikit-learn in c:\users\gusta\appdata\local\programs\python\python312\lib\site-packages (from -r requirements.txt (line 3)) (1.8.0)
-Requirement already satisfied: scipy in c:\users\gusta\appdata\local\programs\python\python312\lib\site-packages (from -r requirements.txt (line 4)) (1.17.1)
-Requirement already satisfied: seaborn in c:\users\gusta\appdata\local\programs\python\python312\lib\site-packages (from -r requirements.txt (line 5)) (0.13.2)
-Requirement already satisfied: matplotlib in c:\users\gusta\appdata\local\programs\python\python312\lib\site-packages (from -r requirements.txt (line 6)) (3.10.9)
-Requirement already satisfied: plotly in c:\users\gusta\appdata\local\programs\python\python312\lib\site-packages (from -r requirements.txt (line 7)) (7.0.0)
-Requirement already satisfied: openpyxl in c:\users\gusta\appdata\local\programs\python\python312\lib\site-packages (from -r requirements.txt (line 8)) (3.1.5)
-Requirement already satisfied: ucimlrepo in c:\users\gusta\appdata\local\programs\python\python312\lib\site-packages (from -r requirements.txt (line 9)) (0.0.7)
-Requirement already satisfied: python-dateutil>=2.8.2 in c:\users\gusta\appdata\local\programs\python\python312\lib\site-packages (from pandas->-r requirements.txt (line 1)) (2.9.0.post0)
-Requirement already satisfied: pytz>=2020.1 in c:\users\gusta\appdata\local\programs\python\python312\lib\site-packages (from pandas->-r requirements.txt (line 1)) (2024.2)
-Requirement already satisfied: tzdata>=2022.7 in c:\users\gusta\appdata\local\programs\python\python312\lib\site-packages (from pandas->-r requirements.txt (line 1)) (2024.2)
-Requirement already satisfied: joblib>=1.3.0 in c:\users\gusta\appdata\local\programs\python\python312\lib\site-packages (from scikit-learn->-r requirements.txt (line 3)) (1.5.3)
-Requirement already satisfied: threadpoolctl>=3.2.0 in c:\users\gusta\appdata\local\programs\python\python312\lib\site-packages (from scikit-learn->-r requirements.txt (line 3)) (3.6.0)
-Requirement already satisfied: contourpy>=1.0.1 in c:\users\gusta\appdata\local\programs\python\python312\lib\site-packages (from matplotlib->-r requirements.txt (line 6)) (1.3.3)
-Requirement already satisfied: cycler>=0.10 in c:\users\gusta\appdata\local\programs\python\python312\lib\site-packages (from matplotlib->-r requirements.txt (line 6)) (0.12.1)
-Requirement already satisfied: fonttools>=4.22.0 in c:\users\gusta\appdata\local\programs\python\python312\lib\site-packages (from matplotlib->-r requirements.txt (line 6)) (4.62.1)
-Requirement already satisfied: kiwisolver>=1.3.1 in c:\users\gusta\appdata\local\programs\python\python312\lib\site-packages (from matplotlib->-r requirements.txt (line 6)) (1.5.0)
-Requirement already satisfied: packaging>=20.0 in c:\users\gusta\appdata\local\programs\python\python312\lib\site-packages (from matplotlib->-r requirements.txt (line 6)) (26.0)
-Requirement already satisfied: pillow>=8 in c:\users\gusta\appdata\local\programs\python\python312\lib\site-packages (from matplotlib->-r requirements.txt (line 6)) (12.2.0)
-Requirement already satisfied: pyparsing>=3 in c:\users\gusta\appdata\local\programs\python\python312\lib\site-packages (from matplotlib->-r requirements.txt (line 6)) (3.3.2)
-Requirement already satisfied: narwhals>=1.15.1 in c:\users\gusta\appdata\local\programs\python\python312\lib\site-packages (from plotly->-r requirements.txt (line 7)) (2.26.0)
-Requirement already satisfied: et-xmlfile in c:\users\gusta\appdata\local\programs\python\python312\lib\site-packages (from openpyxl->-r requirements.txt (line 8)) (2.0.0)
-Requirement already satisfied: certifi>=2020.12.5 in c:\users\gusta\appdata\local\programs\python\python312\lib\site-packages (from ucimlrepo->-r requirements.txt (line 9)) (2026.2.25)
-Requirement already satisfied: six>=1.5 in c:\users\gusta\appdata\local\programs\python\python312\lib\site-packages (from python-dateutil>=2.8.2->pandas->-r requirements.txt (line 1)) (1.16.0)
-
-[notice] A new release of pip is available: 24.2 -> 26.2.1
-[notice] To update, run: python.exe -m pip install --upgrade pip
-PS D:\Customer-Segmentation-RFM> python main.py
-=== 1. Carregando dados ===
-Dados carregados via ucimlrepo.
-
-=== 2. Limpando dados ===
-Linhas após limpeza: 392,692 | Clientes únicos: 4,338
-
-=== 3. Calculando RFM ===
-Clientes na modelagem: 4,251 (de 4,338 originais)
-
-=== 4. Rodando algoritmos de clustering ===
-[K-Means] k sugerido pelo silhouette: 2 (ajuste manualmente se o Elbow discordar)
-[K-Means] Estabilidade: ARI médio entre 10 execuções com seeds distintas = 1.000 (1.0 = clusters idênticos entre execuções)
-[K-Means] Convergência: 14.2 iterações em média (máx=18 de um limite de 300)
-[K-Means] convergiu em 18 iterações (limite: 300)
-[Hierarchical] linkage=ward       silhouette=0.7558
-[Hierarchical] linkage=complete   silhouette=0.9015
-[Hierarchical] linkage=average    silhouette=0.9015
-[Hierarchical] melhor linkage: complete
-[DBSCAN] eps estimado automaticamente pelo cotovelo: 0.579 (revise o gráfico dbscan_k_distance.png e ajuste com --eps se necessário)
-[DBSCAN] 2 clusters | 108 pontos de ruído (2.5%)
-
---- Comparação dos algoritmos ---
-   algoritmo  n_clusters  silhouette  davies_bouldin  calinski_harabasz  tempo_execucao_s
-     K-Means           2    0.707036        0.694550        4128.759626          0.017995
-Hierarchical           2    0.901517        0.108088         230.367823          0.269665
-      DBSCAN           2    0.717387        0.278346         315.526340          0.104306
-
-Algoritmo final escolhido: Cluster_KMeans
-
-=== 5. Gerando visualizações ===
-[PCA 2D] variância explicada: 90.5%
-[PCA 3D] variância explicada: 100.0%
-
-=== 6. Nomeando clusters ===
-           Recency  Frequency     Monetary Nome_Sugerido  N_Clientes  Revenue_Total  Revenue_%
-Cluster                                                                                       
-0        98.656122   2.910714   938.594491       At Risk        3920    3679290.404       61.0
-1        20.033233  15.616314  7120.888882     Champions         331    2357014.220       39.0
+            Recency  Frequency     Monetary    Nome_Sugerido  N_Clientes  Revenue_Total  Revenue_%
+Cluster                                                                                           
+2         17.950764  12.711375  5183.624771        Champions         589    3053154.990       50.6
+0        100.193455   3.289702  1382.536856          At Risk        1039    1436455.793       23.8
+3         13.226027   4.267123  1332.055205  Loyal Customers         730     972400.300       16.1
+1        229.999024   1.261463   282.347180             Lost        1025     289405.860        4.8
+4         38.346774   1.458525   328.211614    New Customers         868     284887.681        4.7
 
 Concluído. Resultados em: D:\Customer-Segmentation-RFM\outputs
 Figuras (PNG estáticos + HTML interativos) em: D:\Customer-Segmentation-RFM\outputs\figures
