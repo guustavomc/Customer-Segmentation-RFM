@@ -2,7 +2,7 @@
 
 > Developed for the Unsupervised Learning course (Aprendizado de Máquina Não Supervisionado) — Specialization in Applied Artificial Intelligence, UNISINOS.
 
-Customer segmentation with unsupervised machine learning, using **RFM** analysis (Recency, Frequency, Monetary) on the [UCI Online Retail Dataset](https://archive.ics.uci.edu/dataset/352/online+retail). The pipeline compares three clustering algorithms (K-Means, Hierarchical and DBSCAN), validates the clusters with quantitative metrics, and produces the visualizations and segment naming required by the assignment (see [arquivos-base/ATIVIDADE.pdf](arquivos-base/ATIVIDADE.pdf)).
+Customer segmentation with unsupervised machine learning, using **RFM** analysis (Recency, Frequency, Monetary) on the [UCI Online Retail Dataset](https://archive.ics.uci.edu/dataset/352/online+retail). The pipeline compares three clustering algorithms (K-Means, Hierarchical and DBSCAN), validates the clusters with quantitative metrics, and produces the visualizations, segment naming and executive report required by the assignment (see [arquivos-base/ATIVIDADE.pdf](arquivos-base/ATIVIDADE.pdf)).
 
 ## What the pipeline does
 
@@ -101,7 +101,12 @@ pipeline as `main.py`, narrated cell-by-cell (data loading → cleaning → RFM 
 Item 2 visualizations → cluster naming), with all figures and metrics rendered inline. It's self-contained and
 reproducible - open it and "Run All" to regenerate everything from scratch.
 
+## Executive Report
+
+[`RELATORIO_EXECUTIVO.md`](RELATORIO_EXECUTIVO.md) is the written deliverable for Item 3 of the assignment:
+executive summary, methodology, results/insights and prioritized recommendations per segment, built from the
+numbers in `outputs/perfil_clusters.csv` and `outputs/comparacao_algoritmos.csv`.
+
 ## Notes
 
 - `RANDOM_STATE = 42` ensures reproducible results.
-- The executive report (Item 3 of the assignment) is not included in this repo yet - it's a separate written deliverable, to be built from the numbers and segment names exported here.
