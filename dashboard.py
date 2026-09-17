@@ -2,6 +2,8 @@
 Dashboard Interativo — Segmentação de Clientes RFM
 ====================================================
 
+Projeto Disponível em: https://github.com/guustavomc/Customer-Segmentation-RFM
+
 Lê os CSVs gerados por `main.py` em `outputs/` e monta um dashboard único,
 interativo (Plotly), em uma página HTML autocontida — sem precisar de
 servidor (Streamlit) para ser visualizado.

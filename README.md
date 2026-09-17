@@ -2,6 +2,8 @@
 
 > Developed for the Unsupervised Learning course (Aprendizado de Máquina Não Supervisionado) — Specialization in Applied Artificial Intelligence, UNISINOS.
 
+Project Available on [`guustavomc/Customer-Segmentation-RFM`](https://github.com/guustavomc/Customer-Segmentation-RFM)
+
 Customer segmentation with unsupervised machine learning, using **RFM** analysis (Recency, Frequency, Monetary) on the [UCI Online Retail Dataset](https://archive.ics.uci.edu/dataset/352/online+retail). The pipeline compares three clustering algorithms (K-Means, Hierarchical and DBSCAN), validates the clusters with quantitative metrics, and produces the visualizations, segment naming and executive report required by the assignment (see [arquivos-base/ATIVIDADE.pdf](arquivos-base/ATIVIDADE.pdf)).
 
 ## What the pipeline does

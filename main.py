@@ -2,6 +2,8 @@
 Segmentação de Clientes com Aprendizado Não Supervisionado
 =============================================================
 
+Projeto Disponível em: https://github.com/guustavomc/Customer-Segmentation-RFM
+
 Pipeline completo: carrega o UCI Online Retail Dataset, calcula RFM
 (Recency, Frequency, Monetary), roda e compara K-Means / Hierarchical /
 DBSCAN, gera as visualizações do Item 2 e exporta tudo (CSVs, PNGs,
