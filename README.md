@@ -101,7 +101,7 @@ reproducible - open it and "Run All" to regenerate everything from scratch.
 
 ## Executive Report
 
-[`Relatório Atividade 1 - Segmentacao de Clientes RFM.pdf`](<outputs/Relatório Atividade 1 - Segmentacao de Clientes RFM.pdf>) is the
+[`Relatório Atividade 1 - Segmentacao de Clientes RFM.pdf`](<outputs/Relatório Atividade 1.pdf>) is the
 written deliverable for Item 3 of the assignment: executive summary, methodology, results/insights and
 prioritized recommendations (with feasibility notes) per segment, built from the numbers in
 `outputs/perfil_clusters.csv` and `outputs/comparacao_algoritmos.csv`.
